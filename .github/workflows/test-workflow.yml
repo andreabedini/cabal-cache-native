@@ -1,0 +1,38 @@
+name: Test workflow
+
+on:
+  workflow_call:
+    inputs:
+      ghc-version:
+        description: The version of GHC to use
+        type: string
+      cabal-version:
+        description: The version of cabal-install to use
+        type: string
+      index-state:
+        type: string
+      package-id:
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  step-one:
+    uses: ./.github/workflows/test-build.yml
+    with:
+      ghc-version: ${{ inputs.ghc-version }}
+      cabal-version: ${{ inputs.cabal-version }}
+      package-id: ${{ inputs.package-id }}
+      index-state: ${{ inputs.index-state }}
+      extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+
+  step-two:
+    needs: step-one
+    uses: ./.github/workflows/test-build.yml
+    with:
+      ghc-version: ${{ inputs.ghc-version }}
+      cabal-version: ${{ inputs.cabal-version }}
+      package-id: ${{ inputs.package-id }}
+      index-state: ${{ inputs.index-state }}
+      extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}

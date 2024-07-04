@@ -1,0 +1,10 @@
+pre-commit:
+  commands:
+    format:
+      glob: "*.{js,ts}"
+      run: npm run format-check
+    build:
+      globl: "*.{js,ts}"
+      run: npm run build
+    compare:
+      run: git diff --ignore-space-at-eol --exit-code --name-status ./dist

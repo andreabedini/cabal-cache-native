@@ -1,0 +1,43 @@
+{
+  "name": "cabal-cache-native",
+  "description": "Granular caching for Haskell cabal projects",
+  "version": "1.0.0",
+  "author": "Andrea Bedini <andrea@andreabedini.io>",
+  "license": "MIT",
+  "private": true,
+  "homepage": "https://github.com/andreabedini/cabal-cache-native",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andreabedini/cabal-cache-native.git"
+  },
+  "bugs": {
+    "url": "https://github.com/andreabedini/cabal-cache-native.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "esbuild src/restore.ts src/save.ts --bundle --target=node20 --platform=node --format=cjs --minify --outdir=dist",
+    "format": "prettier --write src *.yml *.json *.md",
+    "format-check": "prettier --check src *.yml *.md",
+    "start": "npm run build && node dist/setup/index.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/eslint__js": "^8.42.3",
+    "@types/node": "^22.7.7",
+    "@vtsls/language-server": "^0.2.6",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.13.0",
+    "eslint-plugin-n": "^17.11.1",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.11.0"
+  },
+  "dependencies": {
+    "@actions/cache": "^3.2.4",
+    "@actions/core": "^1.11.1",
+    "@actions/exec": "^1.1.1",
+    "@actions/io": "^1.1.3"
+  }
+}
