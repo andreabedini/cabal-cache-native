@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    // Basic options
+    "target": "esnext",
+    "rootDir": "./src",
+    // Strict type-checking options
+    "strict": true,
+    "noImplicitAny": true,
+    // Module resolution options
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "exclude": ["node_modules"]
+}

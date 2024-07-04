@@ -1,0 +1,59 @@
+name: Test build
+
+on:
+  workflow_call:
+    inputs:
+      ghc-version:
+        description: The version of GHC to use
+        type: string
+      cabal-version:
+        description: The version of cabal-install to use
+        type: string
+      cabal-project:
+        type: string
+      build-command:
+        description: The cabal command to run the build. It will be called with --dry-run first.
+        type: string
+      cache-epoch:
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cabal-cache-native
+
+      - uses: actions/cache@v4
+        with:
+          path: /home/runner/.cabal/packages/hackage.haskell.org/01-index.*
+          key: cahce-test-hackage-index
+          save-always: true
+
+      - uses: haskell-actions/setup@latest
+        id: setup
+        with:
+          ghc-version: ${{ inputs.ghc-version }}
+          cabal-version: ${{ inputs.cabal-version }}
+
+      - run: |
+          mkdir test-project
+          cat <<< '${{ inputs.cabal-project }}' > test-project/cabal.project
+
+      - run: ${{ inputs.build-command }} --dry-run
+        working-directory: test-project
+
+      - uses: ./cabal-cache-native
+        with:
+          store-path: ${{ steps.setup.outputs.cabal-store }}
+          project-path: test-project
+          cache-epoch: ${{ inputs.cache-epoch }}
+
+      - run: ${{ inputs.build-command }}
+        working-directory: test-project

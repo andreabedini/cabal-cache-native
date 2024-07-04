@@ -1,0 +1,23 @@
+name: cabal-cache-native
+description: Native, granular cache for Haskell cabal projects
+inputs:
+  project-path:
+    description: Relative path to the cabal project
+    default: .
+    required: false
+  plan-json:
+    description: Relative path to cabal's plan.json file
+    required: false
+    default: dist-newstyle/cache/plan.json
+  store-path:
+    description: Path to the cabal store
+    required: true
+  cache-epoch:
+    description: Extra string to prepended to the cache keys. It can be used to isolate different caches or start from scratch.
+    required: false
+    default: "0"
+
+runs:
+  using: node20
+  main: ./dist/restore.js
+  post: ./dist/save.js

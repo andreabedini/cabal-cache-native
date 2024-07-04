@@ -1,0 +1,39 @@
+name: Test workflow
+
+on:
+  workflow_call:
+    inputs:
+      ghc-version:
+        description: The version of GHC to use
+        type: string
+      cabal-version:
+        description: The version of cabal-install to use
+        type: string
+      cabal-project:
+        type: string
+      build-command:
+        description: The cabal command to run the build. It will be called with --dry-run first.
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  step-one:
+    uses: ./.github/workflows/test-build.yml
+    with:
+      ghc-version: ${{ inputs.ghc-version }}
+      cabal-version: ${{ inputs.cabal-version }}
+      cabal-project: ${{ inputs.cabal-project }}
+      build-command: ${{ inputs.build-command }}
+      cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+
+  step-two:
+    needs: step-one
+    uses: ./.github/workflows/test-build.yml
+    with:
+      ghc-version: ${{ inputs.ghc-version }}
+      cabal-version: ${{ inputs.cabal-version }}
+      cabal-project: ${{ inputs.cabal-project }}
+      build-command: ${{ inputs.build-command }}
+      cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
