@@ -1,6 +1,7 @@
 import { mainWrapper } from "./wrapper.js";
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
+import { STATE_RESTORED_UNIT_IDS } from "./constants.mjs";
 
 async function restore() {
   try {
@@ -23,7 +24,8 @@ async function restore() {
 
     // non-string values are serialised with JSON.stringify. Being restoredUnits is a simple list of strings, I feel it's simpler and safer to join them with spaces.
     const restoredUnitsStr = restoredUnitIds.join(" ");
-    core.saveState("restoredUnits", restoredUnitsStr);
+    core.saveState(STATE_RESTORED_UNIT_IDS, restoredUnitsStr);
+    core.debug(`Saved restored units: ${restoredUnitsStr}`);
   } catch (error) {
     core.setFailed((error as Error).message);
   }
