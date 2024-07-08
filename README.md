@@ -20,10 +20,12 @@ The complexity of the example workflow from [haskell-actions/setup](https://gith
 ## Features
 
 - **Automatic**: the action detects the project's dependencies directly from cabal's build plan and caches them automatically.
-- **Fast**: the cache is stored in a GitHub Actions cache and it is restored in less than a second (FIXME).
+- **Fast**: the cache is stored in a GitHub Actions cache and it is restored very quickly.
 - **Accurate**: the cached packages are identified by the same package-hash used by cabal, allowing GitHub to garbage-collect them individually when they are not needed anymore.
 
-## Installation
+## Example usage
+
+To use this action you need to get cabal to create a build plan (i.e. the `plan.json` file). This is typically achieved by passing the `--dry-run` flag to the build command. Once `plan.json` has been created, `cabal-cache-native` will read from it the ids of the units to restore from cache. The action will look for `plan.json` in `${project-path}/${plan-json}`.
 
 ```yaml
 jobs:
@@ -32,9 +34,9 @@ jobs:
       - uses: haskell-actions/setup
         id: setup
 
-        # ...
+      # ...
 
-        # This step is required to generate the build plan
+      # This step is required to generate the build plan
       - run: cabal build all --dry-run
 
       - uses: andreabedini/cabal-cache-native
@@ -42,15 +44,19 @@ jobs:
           # required
           store-path: ${{ steps.setup.outputs.cabal-store }}
 
-          # default value
-          project-path: .
+          # optional, the path to the project
+          # project-path: .
 
-          # alternatively you can specify the exact location of plan.json
+          # optional, you can also specify the exact location of plan.json
           # plan-json: dist-newstyle/cache/plan.json
 
           # optional, use this to separate caches or to start from scratch.
-          # cache-epoch: ${{ inputs.cache-epoch }}
+          # cache-epoch: 0
 
       # No need to check for cache hits, just build your project!
       - run: cabal build all
 ```
+
+## License
+
+You are welcome to use this under the MIT license included in the repository.
