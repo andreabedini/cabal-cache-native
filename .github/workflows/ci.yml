@@ -31,9 +31,10 @@ jobs:
     needs: check-dist
     uses: ./.github/workflows/test-workflow.yml
     with:
-      ghc-version: 9.4.8
-      cabal-version: 3.10.3.0
-      build-command: cabal build cabal-plan
+      runs-on: ubuntu-latest
+      ghc-version: 9.10.1
+      cabal-version: 3.12.1.0
+      build-command: cabal build lens
       cabal-project: |
         index-state: 2024-07-04T00:00:00Z
-        extra-packages: cabal-plan
+        extra-packages: lens

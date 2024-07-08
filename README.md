@@ -3,7 +3,7 @@
 This action caches the build dependencies of a Haskell project with
 per-package granularity. It works out of the box and it is really fast.
 
-## Why use this action?
+## Usage
 
 When building a Haskell project with cabal, cabal caches the project
 dependencies in a global cache called the "store". These are identified
@@ -20,7 +20,7 @@ The complexity of the example workflow from [haskell-actions/setup](https://gith
 ## Features
 
 - **Automatic**: the action detects the project's dependencies directly from cabal's build plan and caches them automatically.
-- **Fast**: the cache is stored in a GitHub Actions cache and it is restored very quickly.
+- **Fast**: the cache is stored in GitHub's own cache and it is restored very quickly.
 - **Accurate**: the cached packages are identified by the same package-hash used by cabal, allowing GitHub to garbage-collect them individually when they are not needed anymore.
 
 ## Usage

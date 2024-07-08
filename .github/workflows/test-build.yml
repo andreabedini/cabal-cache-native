@@ -16,13 +16,15 @@ on:
         type: string
       cache-epoch:
         type: string
+      runs-on:
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runs-on }}
     continue-on-error: true
 
     steps:
@@ -32,6 +34,8 @@ jobs:
 
       - uses: actions/cache@v4
         with:
+          # NOTE: I wish haskell-actions/setup would tell us this location
+          # (perhaps even better if cabal itself would tell us)
           path: /home/runner/.cabal/packages/hackage.haskell.org/01-index.*
           key: cahce-test-hackage-index
           save-always: true

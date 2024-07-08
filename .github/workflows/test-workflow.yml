@@ -14,6 +14,9 @@ on:
       build-command:
         description: The cabal command to run the build. It will be called with --dry-run first.
         type: string
+      runs-on:
+        description: The type of machine to run the job on
+        type: string
 
 permissions:
   contents: read
@@ -27,6 +30,7 @@ jobs:
       cabal-project: ${{ inputs.cabal-project }}
       build-command: ${{ inputs.build-command }}
       cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      runs-on: ${{ inputs.runs-on }}
 
   step-two:
     needs: step-one
@@ -37,3 +41,4 @@ jobs:
       cabal-project: ${{ inputs.cabal-project }}
       build-command: ${{ inputs.build-command }}
       cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      runs-on: ${{ inputs.runs-on }}
