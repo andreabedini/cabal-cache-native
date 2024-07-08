@@ -23,7 +23,7 @@ The complexity of the example workflow from [haskell-actions/setup](https://gith
 - **Fast**: the cache is stored in a GitHub Actions cache and it is restored very quickly.
 - **Accurate**: the cached packages are identified by the same package-hash used by cabal, allowing GitHub to garbage-collect them individually when they are not needed anymore.
 
-## Example usage
+## Usage
 
 To use this action you need to get cabal to create a build plan (i.e. the `plan.json` file). This is typically achieved by passing the `--dry-run` flag to the build command. Once `plan.json` has been created, `cabal-cache-native` will read from it the ids of the units to restore from cache. The action will look for `plan.json` in `${project-path}/${plan-json}`.
 
