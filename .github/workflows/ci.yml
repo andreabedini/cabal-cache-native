@@ -16,19 +16,53 @@ env:
 
 jobs:
   basic-validation:
-    uses: actions/reusable-workflows/.github/workflows/basic-validation.yml@main
-    with:
-      node-version: "20.x"
-      operating-systems: |
-        ["ubuntu-latest"]
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on:
+          - ubuntu-latest
 
-  check-dist:
-    uses: actions/reusable-workflows/.github/workflows/check-dist.yml@main
-    with:
-      node-version: "20.x"
+    runs-on: ${{ matrix.runs-on }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run prettier
+        run: npm run format-check
+
+      - name: Build
+        run: npm run build
+
+      - name: Compare the expected and actual dist directories
+        run: |
+          if [ "$(git diff --ignore-space-at-eol ./dist | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after the build. See the status below:"
+            git diff
+            exit 1
+          fi
+        id: diff
+
+      # If inners of the dist directory were different than expected, upload the expected version as an artifact
+      - name: Upload artifact
+        if: ${{failure() && steps.diff.conclusion == 'failure'}}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: ./dist
+
+      - name: Audit packages
+        run: npm audit --audit-level=high
 
   cache-test:
-    needs: check-dist
+    needs: basic-validation
     uses: ./.github/workflows/test-workflow.yml
     with:
       runs-on: ubuntu-latest

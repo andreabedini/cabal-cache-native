@@ -17,11 +17,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "esbuild src/restore.mts src/save.mts --bundle --platform=node --target=node20 --outdir=dist",
-    "lint": "eslint **/*.mts --cache",
-    "format": "prettier --write **/*.mts",
-    "format-check": "prettier --check **/*.mts",
-    "test": ""
+    "build": "esbuild src/restore.ts src/save.ts --bundle --target=node20 --platform=node --format=cjs --minify --outdir=dist",
+    "format": "prettier --write src *.yml *.json *.md",
+    "format-check": "prettier --check src *.yml *.md",
+    "start": "npm run build && node dist/setup/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.6.0",

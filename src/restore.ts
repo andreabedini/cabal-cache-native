@@ -1,7 +1,7 @@
 import { mainWrapper } from "./wrapper.js";
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
-import { STATE_RESTORED_UNIT_IDS } from "./constants.mjs";
+import { STATE_RESTORED_UNIT_IDS } from "./constants.js";
 
 async function restore() {
   try {

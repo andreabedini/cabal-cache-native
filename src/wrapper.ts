@@ -35,7 +35,7 @@ export async function mainWrapper(act: Action) {
   const resolvedPath = path.resolve(projectPath, planJson);
   console.log(`Reading the build plan from ${resolvedPath}`);
 
-  let plan;
+  let plan: Plan;
   try {
     const file = await readFile(resolvedPath);
     plan = JSON.parse(file.toString());
