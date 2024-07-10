@@ -68,7 +68,5 @@ jobs:
       runs-on: ubuntu-latest
       ghc-version: 9.10.1
       cabal-version: 3.12.1.0
-      build-command: cabal build lens
-      cabal-project: |
-        index-state: 2024-07-04T00:00:00Z
-        extra-packages: lens
+      package-id: lens
+      index-state: "2024-07-04T00:00:00Z"

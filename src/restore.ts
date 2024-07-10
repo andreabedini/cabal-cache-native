@@ -1,34 +1,72 @@
-import { mainWrapper } from "./wrapper.js";
+import * as path from "path";
 import * as core from "@actions/core";
+import * as io from "@actions/io";
 import * as cache from "@actions/cache";
-import { STATE_RESTORED_UNIT_IDS } from "./constants.js";
+import { exec } from "./exec.js";
+import { cacheKeyGen } from "./cache-key.js";
+import { getPlan } from "./plan.js";
+import { getStoreDirectory } from "./store.js";
 
-async function restore() {
-  try {
-    // We need to remember the list of units we have restored from the cache so we do not try to cache them again later.
-    const restoredUnitIds: string[] = [];
+export async function restore() {
+  const plan = await getPlan();
 
-    core.startGroup("Restoring cache ...");
-    await mainWrapper(async (_plan, unit, paths, epoch) => {
-      const key = `cabal-cache-${epoch}-${unit.id}`;
-      const restoredKey = await cache.restoreCache(paths, key);
-      if (restoredKey) {
-        console.log(`Unit ${unit.id} restored from cache`);
-        restoredUnitIds.push(unit.id);
-      } else {
-        console.log(`Unit ${unit.id} not found in cache`);
-      }
-    });
-    core.endGroup();
-    console.log(`Restored ${restoredUnitIds.length} units from cache`);
+  const compilerId = plan["compiler-id"];
+  core.saveState("compilerId", compilerId);
 
-    // non-string values are serialised with JSON.stringify. Being restoredUnits is a simple list of strings, I feel it's simpler and safer to join them with spaces.
-    const restoredUnitsStr = restoredUnitIds.join(" ");
-    core.saveState(STATE_RESTORED_UNIT_IDS, restoredUnitsStr);
-    core.debug(`Saved restored units: ${restoredUnitsStr}`);
-  } catch (error) {
-    core.setFailed((error as Error).message);
+  const cabalVersion = plan["cabal-version"];
+
+  // try to find the compiler
+  const ghcPath = (await io.which(compilerId, false)) || "ghc";
+  core.debug(`ghcPath: ${ghcPath}`);
+
+  const storeDirectory = await getStoreDirectory(ghcPath, cabalVersion);
+  core.saveState("storeDirectory", storeDirectory);
+  core.debug(`storeDirectory: ${storeDirectory}`);
+
+  const extraCacheKey = core.getInput("extra-cache-key", { required: false });
+
+  // We need to remember the list of units we have restored from the cache so we do not try to cache them again later.
+  const restoredUnitIds = new Set<string>();
+
+  const cacheKey = cacheKeyGen(compilerId, extraCacheKey);
+
+  core.startGroup("Restoring cache ...");
+
+  for (const { id: unitId, style: unitStyle } of plan["install-plan"]) {
+    if (unitStyle != "global") {
+      continue;
+    }
+
+    const key = cacheKey(unitId);
+    const paths = [
+      path.join(storeDirectory, unitId),
+      path.join(storeDirectory, "package.db", `${unitId}.conf`),
+    ];
+
+    core.debug(`Restoring paths ${paths} with key: ${key}`);
+    const restoredKey = await cache.restoreCache(paths, key);
+
+    if (restoredKey) {
+      console.log(`Unit ${unitId} restored from cache`);
+      restoredUnitIds.add(unitId);
+    } else {
+      console.log(`Unit ${unitId} was not found in cache`);
+    }
   }
+
+  core.endGroup();
+  console.log(`Restored ${restoredUnitIds.size} units from cache`);
+
+  // Non-string values are serialised with JSON.stringify. It does not seem
+  // to work for Set. Being restoredUnits is a simple set of strings, it's
+  // simpler and safer to make my own trivial serialisation.
+  const restoredUnitIdsStr = Array.from(restoredUnitIds).join(" ");
+  core.saveState("restoredUnitIdsStr", restoredUnitIdsStr);
+
+  const packageDbPath = path.join(storeDirectory, "package.db");
+  // Make sure the directory exists before running ghc-pkg
+  await io.mkdirP(packageDbPath);
+  await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
 }
 
 restore();

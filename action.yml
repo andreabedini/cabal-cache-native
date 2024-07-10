@@ -12,10 +12,9 @@ inputs:
   store-path:
     description: Path to the cabal store
     required: true
-  cache-epoch:
+  extra-cache-key:
     description: Extra string to prepended to the cache keys. It can be used to isolate different caches or start from scratch.
     required: false
-    default: "0"
 
 runs:
   using: node20

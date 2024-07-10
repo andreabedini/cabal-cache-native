@@ -9,10 +9,9 @@ on:
       cabal-version:
         description: The version of cabal-install to use
         type: string
-      cabal-project:
+      index-state:
         type: string
-      build-command:
-        description: The cabal command to run the build. It will be called with --dry-run first.
+      package-id:
         type: string
       runs-on:
         description: The type of machine to run the job on
@@ -27,9 +26,9 @@ jobs:
     with:
       ghc-version: ${{ inputs.ghc-version }}
       cabal-version: ${{ inputs.cabal-version }}
-      cabal-project: ${{ inputs.cabal-project }}
-      build-command: ${{ inputs.build-command }}
-      cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      package-id: ${{ inputs.package-id }}
+      index-state: ${{ inputs.index-state }}
+      extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
       runs-on: ${{ inputs.runs-on }}
 
   step-two:
@@ -38,7 +37,7 @@ jobs:
     with:
       ghc-version: ${{ inputs.ghc-version }}
       cabal-version: ${{ inputs.cabal-version }}
-      cabal-project: ${{ inputs.cabal-project }}
-      build-command: ${{ inputs.build-command }}
-      cache-epoch: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      package-id: ${{ inputs.package-id }}
+      index-state: ${{ inputs.index-state }}
+      extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
       runs-on: ${{ inputs.runs-on }}

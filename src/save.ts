@@ -1,42 +1,62 @@
-import { mainWrapper } from "./wrapper.js";
+import * as path from "path";
+import * as fs from "fs/promises";
+
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
-import { STATE_RESTORED_UNIT_IDS } from "./constants.js";
+import { cacheKeyGen } from "./cache-key";
 
 async function save() {
-  try {
-    let numberSavedUnits = 0;
+  const savedUnits = new Set<string>();
 
-    const restoredUnitIdsStr = core.getState(STATE_RESTORED_UNIT_IDS);
-    const restoredUnitIds = restoredUnitIdsStr?.split(" ") || [];
-    core.debug(restoredUnitIdsStr);
+  const storeDirectory = core.getState("storeDirectory");
+  core.debug(`Saved storeDirectory: ${storeDirectory}`);
 
-    core.startGroup("Saving cache ...");
-    await mainWrapper(async (_plan, unit, paths, epoch) => {
-      try {
-        // NOTE: Cache entries are immutable so we should not save again
-        // an entry with a key that already exists. Therefore we cache the
-        // unit if:
-        // 1. we do not have a list of restored units, or
-        // 2. we have a list of restored units, but the unit is not in the list.
-        console.log(`Checking if unit ${unit.id} should be cached ...`);
-        if (restoredUnitIds.indexOf(unit.id) == -1) {
-          const cacheKey = `cabal-cache-${epoch}-${unit.id}`;
-          await cache.saveCache(paths, cacheKey);
-          console.log(`Unit ${unit.id} stored in cache`);
-          numberSavedUnits += 1;
-        } else {
-          console.log(`Skipping already cached unit ${unit.id}`);
-        }
-      } catch (e) {
-        core.error(`Caught an exception while caching unit ${unit.id}: ${e}`);
-      }
-    });
-    core.endGroup();
-    console.log(`Cached ${numberSavedUnits} new units`);
-  } catch (error) {
-    core.setFailed((error as Error).message);
+  const restoredUnitIdsStr = core.getState("restoredUnitIdsStr");
+  const restoredUnitIds = new Set(restoredUnitIdsStr?.split(" ") || []);
+  core.debug(`Saved restored unit ids: ${restoredUnitIdsStr}`);
+
+  const compilerId = core.getState("compilerId");
+  core.debug(`Saved compilerId: ${compilerId}`);
+
+  const extraCacheKey = core.getInput("extra-cache-key", { required: false });
+  const cacheKey = cacheKeyGen(compilerId, extraCacheKey);
+
+  core.startGroup("Saving cache ...");
+
+  const dir = await fs.opendir(storeDirectory);
+
+  for await (const direnv of dir) {
+    // Skip non-unit directories
+    if (
+      !direnv.isDirectory() ||
+      direnv.name == "incoming" ||
+      direnv.name == "package.db"
+    ) {
+      continue;
+    }
+
+    const unitId = direnv.name;
+
+    // Skip already cached units
+    if (restoredUnitIds.has(unitId)) {
+      core.debug(`Skipping already cached unit ${unitId}`);
+      continue;
+    }
+
+    const key = cacheKey(unitId);
+    const paths = [
+      path.join(storeDirectory, unitId),
+      path.join(storeDirectory, "package.db", `${unitId}.conf`),
+    ];
+
+    core.debug(`Caching paths ${paths} with key: ${key}`);
+    await cache.saveCache(paths, key);
+    savedUnits.add(unitId);
+    console.log(`Unit ${unitId} stored in cache`);
   }
+
+  core.endGroup();
+  console.log(`Cached ${savedUnits.size} new units`);
 }
 
 save();

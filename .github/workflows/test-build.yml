@@ -9,12 +9,11 @@ on:
       cabal-version:
         description: The version of cabal-install to use
         type: string
-      cabal-project:
+      package-id:
         type: string
-      build-command:
-        description: The cabal command to run the build. It will be called with --dry-run first.
+      index-state:
         type: string
-      cache-epoch:
+      extra-cache-key:
         type: string
       runs-on:
         type: string
@@ -37,10 +36,10 @@ jobs:
           # NOTE: I wish haskell-actions/setup would tell us this location
           # (perhaps even better if cabal itself would tell us)
           path: /home/runner/.cabal/packages/hackage.haskell.org/01-index.*
-          key: cahce-test-hackage-index
+          key: cache-test-hackage-index
           save-always: true
 
-      - uses: haskell-actions/setup@latest
+      - uses: haskell-actions/setup@v2
         id: setup
         with:
           ghc-version: ${{ inputs.ghc-version }}
@@ -48,16 +47,17 @@ jobs:
 
       - run: |
           mkdir test-project
-          cat <<< '${{ inputs.cabal-project }}' > test-project/cabal.project
+          echo "index-state: ${{ inputs.index-state }}" >> test-project/cabal.project
+          echo "extra-packages: ${{ inputs.package-id }}" >> test-project/cabal.project
 
-      - run: ${{ inputs.build-command }} --dry-run
+      - run: cabal build ${{ inputs.package-id }} --dry-run
         working-directory: test-project
 
       - uses: ./cabal-cache-native
         with:
           store-path: ${{ steps.setup.outputs.cabal-store }}
           project-path: test-project
-          cache-epoch: ${{ inputs.cache-epoch }}
+          extra-cache-key: ${{ inputs.extra-cache-key }}
 
-      - run: ${{ inputs.build-command }}
+      - run: cabal build ${{ inputs.package-id }}
         working-directory: test-project
