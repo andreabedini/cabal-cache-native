@@ -61,17 +61,7 @@ jobs:
       - name: Audit packages
         run: npm audit --audit-level=high
 
-  cache-test:
-    needs: basic-validation
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      runs-on: ubuntu-latest
-      ghc-version: 9.8.2
-      cabal-version: 3.12.1.0
-      package-id: lens
-      index-state: "2024-07-04T00:00:00Z"
-
-  cache-test:
+  cache-test-cabal-3-10:
     needs: basic-validation
     uses: ./.github/workflows/test-workflow.yml
     with:
@@ -81,3 +71,12 @@ jobs:
       package-id: lens
       index-state: "2024-07-04T00:00:00Z"
 
+  cache-test-cabal-3-12:
+    needs: basic-validation
+    uses: ./.github/workflows/test-workflow.yml
+    with:
+      runs-on: ubuntu-latest
+      ghc-version: 9.8.2
+      cabal-version: 3.12.1.0
+      package-id: lens
+      index-state: "2024-07-04T00:00:00Z"
