@@ -31,15 +31,15 @@ async function save() {
         path.join(storeDirectory, "package.db", `${unitId}.conf`),
       ];
 
-      core.debug(`Caching paths ${paths} with key: ${key}`);
+      core.info(`Caching paths ${paths} with key: ${key}`);
       try {
         await cache.saveCache(paths, key);
       } catch (e) {
-        console.error(`Error saving ${unitId}: ${e}`);
+        core.warning(`Error saving ${unitId}: ${e}`);
         unitsFailedToCache.add(unitId);
         continue;
       }
-      console.log(`Unit ${unitId} stored in cache`);
+      core.info(`Unit ${unitId} stored in cache`);
       numberOfSavedUnits++;
     }
     core.endGroup();
@@ -50,7 +50,7 @@ async function save() {
       core.info("No new units were cached.");
     }
     if (unitsFailedToCache.size > 0) {
-      console.log(
+      core.warning(
         `Failed to cache ${unitsFailedToCache.size} units: ${Array.from(unitsFailedToCache).join(", ")}`,
       );
     }

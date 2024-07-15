@@ -29,7 +29,7 @@ export async function getPlan(): Promise<Plan> {
   const projectPath = core.getInput("project-path", { required: false });
 
   const resolvedPath = path.resolve(projectPath, planJson);
-  console.log(`Reading the build plan from ${resolvedPath}`);
+  core.info(`Reading the build plan from ${resolvedPath}`);
 
   return await readPlanJson(resolvedPath);
 }

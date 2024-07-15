@@ -48,16 +48,16 @@ export async function restore() {
     const restoredKey = await cache.restoreCache(paths, key);
 
     if (restoredKey) {
-      console.log(`Unit ${unitId} restored from cache`);
+      core.info(`Unit ${unitId} restored from cache`);
       numberOfRestoredUnits++;
     } else {
-      console.log(`Unit ${unitId} was not found in cache`);
+      core.info(`Unit ${unitId} was not found in cache`);
       unitsToCache.add(unitId);
     }
   }
   core.endGroup();
 
-  console.log(`Restored ${numberOfRestoredUnits} units from cache`);
+  core.info(`Restored ${numberOfRestoredUnits} units from cache`);
 
   // Non-string values are serialised with JSON.stringify. It does not seem
   // to work for Set. Being restoredUnits is a simple set of strings, it's
