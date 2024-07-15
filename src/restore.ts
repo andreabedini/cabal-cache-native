@@ -15,11 +15,7 @@ export async function restore() {
 
   const cabalVersion = plan["cabal-version"];
 
-  // try to find the compiler
-  const ghcPath = (await io.which(compilerId, false)) || "ghc";
-  core.debug(`ghcPath: ${ghcPath}`);
-
-  const storeDirectory = await getStoreDirectory(ghcPath, cabalVersion);
+  const storeDirectory = await getStoreDirectory(compilerId, cabalVersion);
   core.saveState("storeDirectory", storeDirectory);
   core.debug(`storeDirectory: ${storeDirectory}`);
 
@@ -65,7 +61,7 @@ export async function restore() {
   const packageDbPath = path.join(storeDirectory, "package.db");
   // Make sure the directory exists before running ghc-pkg
   await io.mkdirP(packageDbPath);
-  await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
+  // await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
 }
 
 restore();
