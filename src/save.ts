@@ -14,6 +14,12 @@ async function save() {
   const extraCacheKey = core.getInput("extra-cache-key", { required: false });
   const mkCacheKey = cacheKeyGen(compilerId, extraCacheKey);
 
+  if (core.getState("unitsToCache") === "") {
+    core.warning(
+      "Something must have gone wrong, unitsToCache is empty. There is nothing I can do here.",
+    );
+  }
+
   const unitsToCache = JSON.parse(core.getState("unitsToCache"));
   if (!(unitsToCache instanceof Array)) {
     throw Error(`unitsToCache is not an array: ${unitsToCache}`);
