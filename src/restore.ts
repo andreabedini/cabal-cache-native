@@ -64,4 +64,8 @@ export async function restore() {
   await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
 }
 
-restore();
+try {
+  restore();
+} catch (error) {
+  core.setFailed(`Action failed with error: ${error.message}`);
+}
