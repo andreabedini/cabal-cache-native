@@ -21,9 +21,15 @@ function versionAtLeast(ver1: string, ver2: string) {
 }
 
 async function findGhc(planCompilerId: string) {
+  let path = core.getInput("ghc-path", { required: false });
+  if (path) {
+    core.debug(`using user provided path ${path}`);
+    return path;
+  }
+
   // try to find the compiler with "compiler-id" as in the plan
   core.debug(`planCompilerId: ${planCompilerId}`);
-  let path = await io.which(planCompilerId, false);
+  path = await io.which(planCompilerId, false);
   if (path) {
     return path;
   }

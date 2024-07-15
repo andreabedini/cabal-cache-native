@@ -12,6 +12,9 @@ inputs:
   store-path:
     description: Path to the cabal store
     required: true
+  ghc-path:
+    description: Path to the same GHC used by cabal
+    required: false
   extra-cache-key:
     description: Extra string to prepended to the cache keys. It can be used to isolate different caches or start from scratch.
     required: false
