@@ -59,11 +59,8 @@ export async function restore() {
 
   core.info(`Restored ${numberOfRestoredUnits} units from cache`);
 
-  // Non-string values are serialised with JSON.stringify. It does not seem
-  // to work for Set. Being restoredUnits is a simple set of strings, it's
-  // simpler and safer to make my own trivial serialisation.
-  const unitsToCacheStr = Array.from(unitsToCache).join(" ");
-  core.saveState("unitsToCacheStr", unitsToCacheStr);
+  // Only enumerable own properties are visited. This means Map, Set, etc. will become "{}".
+  core.saveState("unitsToCache", JSON.stringify(Array.from(unitsToCache)));
 
   const packageDbPath = path.join(storeDirectory, "package.db");
   // Make sure the directory exists before running ghc-pkg

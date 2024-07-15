@@ -14,16 +14,19 @@ async function save() {
   const extraCacheKey = core.getInput("extra-cache-key", { required: false });
   const mkCacheKey = cacheKeyGen(compilerId, extraCacheKey);
 
-  const unitsToCacheStr = core.getState("unitsToCacheStr");
-  const unitsToCache = new Set(unitsToCacheStr?.split(" ") || []);
-  core.debug(`Units to cache: ${unitsToCacheStr}`);
+  const unitsToCache = JSON.parse(core.getState("unitsToCache"));
+  if (!(unitsToCache instanceof Array)) {
+    throw Error(`unitsToCache is not an array: ${unitsToCache}`);
+  }
 
-  if (unitsToCache.size === 0) {
+  if (unitsToCache.length === 0) {
     core.info("No units to cache, stopping here");
   } else {
+    core.startGroup("Saving cache ...");
+    core.debug(`Units to cache: ${unitsToCache.join(", ")}`);
+
     let numberOfSavedUnits = 0;
     const unitsFailedToCache = new Set<string>();
-    core.startGroup("Saving cache ...");
     for await (const unitId of unitsToCache) {
       const key = mkCacheKey(unitId);
       const paths = [
