@@ -15,15 +15,20 @@ on:
         type: string
       extra-cache-key:
         type: string
-      runs-on:
-        type: string
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: ${{ inputs.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        run-on:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.run-on }}
     continue-on-error: true
 
     steps:
@@ -35,7 +40,7 @@ jobs:
         with:
           # NOTE: I wish haskell-actions/setup would tell us this location
           # (perhaps even better if cabal itself would tell us)
-          path: /home/runner/.cabal/packages/hackage.haskell.org/01-index.*
+          path: ${{ steps.setup.outputs.cabal-store }}/../packages/hackage.haskell.org/01-index.*
           key: cache-test-hackage-index
           save-always: true
 

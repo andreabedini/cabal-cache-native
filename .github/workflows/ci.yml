@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Basic validation
 
 on:
   pull_request:
@@ -42,12 +42,7 @@ jobs:
         run: npm run build
 
       - name: Compare the expected and actual dist directories
-        run: |
-          if [ "$(git diff --ignore-space-at-eol ./dist | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after the build. See the status below:"
-            git diff
-            exit 1
-          fi
+        run: git diff --ignore-space-at-eol --exit-code --name-status ./dist
         id: diff
 
       # If inners of the dist directory were different than expected, upload the expected version as an artifact
@@ -61,22 +56,6 @@ jobs:
       - name: Audit packages
         run: npm audit --audit-level=high
 
-  cache-test-cabal-3-10:
+  tests:
     needs: basic-validation
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      runs-on: ubuntu-latest
-      ghc-version: 9.8.2
-      cabal-version: 3.10.3.0
-      package-id: lens
-      index-state: "2024-07-04T00:00:00Z"
-
-  cache-test-cabal-3-12:
-    needs: basic-validation
-    uses: ./.github/workflows/test-workflow.yml
-    with:
-      runs-on: ubuntu-latest
-      ghc-version: 9.8.2
-      cabal-version: 3.12.1.0
-      package-id: lens
-      index-state: "2024-07-04T00:00:00Z"
+    uses: ./.github/workflows/tests.yml

@@ -25,19 +25,20 @@ export async function restore() {
 
   const extraCacheKey = core.getInput("extra-cache-key", { required: false });
 
-  // We need to remember the list of units we have restored from the cache so we do not try to cache them again later.
-  const restoredUnitIds = new Set<string>();
+  let numberOfRestoredUnits = 0;
+  // We will make a list of units in the plan that are not found in the cache. These will
+  // be the units to cache in the post action.
+  const unitsToCache = new Set<string>();
 
-  const cacheKey = cacheKeyGen(compilerId, extraCacheKey);
+  const myCacheKey = cacheKeyGen(compilerId, extraCacheKey);
 
   core.startGroup("Restoring cache ...");
-
   for (const { id: unitId, style: unitStyle } of plan["install-plan"]) {
     if (unitStyle != "global") {
       continue;
     }
 
-    const key = cacheKey(unitId);
+    const key = myCacheKey(unitId);
     const paths = [
       path.join(storeDirectory, unitId),
       path.join(storeDirectory, "package.db", `${unitId}.conf`),
@@ -48,20 +49,21 @@ export async function restore() {
 
     if (restoredKey) {
       console.log(`Unit ${unitId} restored from cache`);
-      restoredUnitIds.add(unitId);
+      numberOfRestoredUnits++;
     } else {
       console.log(`Unit ${unitId} was not found in cache`);
+      unitsToCache.add(unitId);
     }
   }
-
   core.endGroup();
-  console.log(`Restored ${restoredUnitIds.size} units from cache`);
+
+  console.log(`Restored ${numberOfRestoredUnits} units from cache`);
 
   // Non-string values are serialised with JSON.stringify. It does not seem
   // to work for Set. Being restoredUnits is a simple set of strings, it's
   // simpler and safer to make my own trivial serialisation.
-  const restoredUnitIdsStr = Array.from(restoredUnitIds).join(" ");
-  core.saveState("restoredUnitIdsStr", restoredUnitIdsStr);
+  const unitsToCacheStr = Array.from(unitsToCache).join(" ");
+  core.saveState("unitsToCacheStr", unitsToCacheStr);
 
   const packageDbPath = path.join(storeDirectory, "package.db");
   // Make sure the directory exists before running ghc-pkg

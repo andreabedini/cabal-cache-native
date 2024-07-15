@@ -1,62 +1,60 @@
 import * as path from "path";
-import * as fs from "fs/promises";
 
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
 import { cacheKeyGen } from "./cache-key";
 
 async function save() {
-  const savedUnits = new Set<string>();
-
   const storeDirectory = core.getState("storeDirectory");
   core.debug(`Saved storeDirectory: ${storeDirectory}`);
-
-  const restoredUnitIdsStr = core.getState("restoredUnitIdsStr");
-  const restoredUnitIds = new Set(restoredUnitIdsStr?.split(" ") || []);
-  core.debug(`Saved restored unit ids: ${restoredUnitIdsStr}`);
 
   const compilerId = core.getState("compilerId");
   core.debug(`Saved compilerId: ${compilerId}`);
 
   const extraCacheKey = core.getInput("extra-cache-key", { required: false });
-  const cacheKey = cacheKeyGen(compilerId, extraCacheKey);
+  const mkCacheKey = cacheKeyGen(compilerId, extraCacheKey);
 
-  core.startGroup("Saving cache ...");
+  const unitsToCacheStr = core.getState("unitsToCacheStr");
+  const unitsToCache = new Set(unitsToCacheStr?.split(" ") || []);
+  core.debug(`Units to cache: ${unitsToCacheStr}`);
 
-  const dir = await fs.opendir(storeDirectory);
+  if (unitsToCache.size === 0) {
+    core.info("No units to cache, stopping here");
+  } else {
+    let numberOfSavedUnits = 0;
+    const unitsFailedToCache = new Set<string>();
+    core.startGroup("Saving cache ...");
+    for await (const unitId of unitsToCache) {
+      const key = mkCacheKey(unitId);
+      const paths = [
+        path.join(storeDirectory, unitId),
+        path.join(storeDirectory, "package.db", `${unitId}.conf`),
+      ];
 
-  for await (const direnv of dir) {
-    // Skip non-unit directories
-    if (
-      !direnv.isDirectory() ||
-      direnv.name == "incoming" ||
-      direnv.name == "package.db"
-    ) {
-      continue;
+      core.debug(`Caching paths ${paths} with key: ${key}`);
+      try {
+        await cache.saveCache(paths, key);
+      } catch (e) {
+        console.error(`Error saving ${unitId}: ${e}`);
+        unitsFailedToCache.add(unitId);
+        continue;
+      }
+      console.log(`Unit ${unitId} stored in cache`);
+      numberOfSavedUnits++;
     }
+    core.endGroup();
 
-    const unitId = direnv.name;
-
-    // Skip already cached units
-    if (restoredUnitIds.has(unitId)) {
-      core.debug(`Skipping already cached unit ${unitId}`);
-      continue;
+    if (numberOfSavedUnits > 0) {
+      core.info(`Cached ${numberOfSavedUnits} new units`);
+    } else {
+      core.info("No new units were cached.");
     }
-
-    const key = cacheKey(unitId);
-    const paths = [
-      path.join(storeDirectory, unitId),
-      path.join(storeDirectory, "package.db", `${unitId}.conf`),
-    ];
-
-    core.debug(`Caching paths ${paths} with key: ${key}`);
-    await cache.saveCache(paths, key);
-    savedUnits.add(unitId);
-    console.log(`Unit ${unitId} stored in cache`);
+    if (unitsFailedToCache.size > 0) {
+      console.log(
+        `Failed to cache ${unitsFailedToCache.size} units: ${Array.from(unitsFailedToCache).join(", ")}`,
+      );
+    }
   }
-
-  core.endGroup();
-  console.log(`Cached ${savedUnits.size} new units`);
 }
 
 save();

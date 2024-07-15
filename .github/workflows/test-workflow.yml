@@ -13,9 +13,6 @@ on:
         type: string
       package-id:
         type: string
-      runs-on:
-        description: The type of machine to run the job on
-        type: string
 
 permissions:
   contents: read
@@ -29,7 +26,6 @@ jobs:
       package-id: ${{ inputs.package-id }}
       index-state: ${{ inputs.index-state }}
       extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
-      runs-on: ${{ inputs.runs-on }}
 
   step-two:
     needs: step-one
@@ -40,4 +36,3 @@ jobs:
       package-id: ${{ inputs.package-id }}
       index-state: ${{ inputs.index-state }}
       extra-cache-key: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
-      runs-on: ${{ inputs.runs-on }}
