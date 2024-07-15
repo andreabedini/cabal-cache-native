@@ -36,6 +36,13 @@ jobs:
         with:
           path: cabal-cache-native
 
+      - uses: haskell-actions/setup@v2
+        id: setup
+        with:
+          ghc-version: ${{ inputs.ghc-version }}
+          cabal-version: ${{ inputs.cabal-version }}
+          cabal-update: false
+
       - uses: actions/cache@v4
         with:
           # NOTE: I wish haskell-actions/setup would tell us this location
@@ -44,16 +51,12 @@ jobs:
           key: cache-test-hackage-index
           save-always: true
 
-      - uses: haskell-actions/setup@v2
-        id: setup
-        with:
-          ghc-version: ${{ inputs.ghc-version }}
-          cabal-version: ${{ inputs.cabal-version }}
-
       - run: |
           mkdir test-project
           echo "index-state: ${{ inputs.index-state }}" >> test-project/cabal.project
           echo "extra-packages: ${{ inputs.package-id }}" >> test-project/cabal.project
+
+      - run: cabal update
 
       - run: cabal build ${{ inputs.package-id }} --dry-run
         working-directory: test-project
