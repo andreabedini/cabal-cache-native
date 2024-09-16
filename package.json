@@ -23,7 +23,7 @@
     "start": "npm run build && node dist/setup/index.js"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.1",
+    "@eslint/js": "^9.10.0",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^20.14.10",
     "@vtsls/language-server": "^0.2.5",
@@ -31,7 +31,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-n": "^17.10.2",
     "prettier": "^3.3.3",
-    "typescript": "^5.5.4",
+    "typescript": "^5.6.2",
     "typescript-eslint": "^7.17.0"
   },
   "dependencies": {
