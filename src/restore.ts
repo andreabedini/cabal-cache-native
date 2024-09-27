@@ -2,7 +2,6 @@ import * as path from "path";
 import * as core from "@actions/core";
 import * as io from "@actions/io";
 import * as cache from "@actions/cache";
-import { exec } from "./exec.js";
 import { cacheKeyGen } from "./cache-key.js";
 import { getPlan } from "./plan.js";
 import { getStoreDirectory } from "./store.js";
@@ -61,11 +60,6 @@ export async function restore() {
 
   // Only enumerable own properties are visited. This means Map, Set, etc. will become "{}".
   core.saveState("unitsToCache", JSON.stringify(Array.from(unitsToCache)));
-
-  const packageDbPath = path.join(storeDirectory, "package.db");
-  // Make sure the directory exists before running ghc-pkg
-  await io.mkdirP(packageDbPath);
-  await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
 }
 
 restore();
