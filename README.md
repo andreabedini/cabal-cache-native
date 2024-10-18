@@ -57,6 +57,10 @@ jobs:
       - run: cabal build all
 ```
 
+NOTE: `cabal build` has to be the same command you use to build (plus
+`--dry-run`) otherwise you risk caching the wrong dependencies. This should not
+cause build failures, but it will cause unnecessary recompilations.
+
 ## License
 
 You are welcome to use this under the MIT license included in the repository.
