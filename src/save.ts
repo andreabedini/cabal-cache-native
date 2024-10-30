@@ -1,5 +1,5 @@
+import * as fs from "fs/promises";
 import * as path from "path";
-
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
 import { cacheKeyGen } from "./cache-key";
@@ -33,6 +33,12 @@ async function save() {
         path.join(storeDirectory, unitId),
         path.join(storeDirectory, "package.db", `${unitId}.conf`),
       ];
+
+      if (
+        !(await Promise.all(paths.map((p) => fs.stat(p))).catch((_) => false))
+      ) {
+        continue;
+      }
 
       core.info(`Caching paths ${paths} with key: ${key}`);
       try {
