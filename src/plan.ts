@@ -1,7 +1,6 @@
+import * as core from "@actions/core";
 import * as fs from "fs/promises";
 import * as path from "path";
-
-import * as core from "@actions/core";
 
 export interface Unit {
   id: string;
