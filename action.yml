@@ -12,9 +12,18 @@ inputs:
   store-path:
     description: Path to the cabal store
     required: true
-  extra-cache-key:
+  cache-key-prefix:
     description: Extra string to prepended to the cache keys. It can be used to isolate different caches or start from scratch.
     required: false
+    default: cabal-
+  ghc:
+    description: Path to ghc
+    required: false
+    default: ghc
+  ghcPkg:
+    description: Path to ghc-pkg
+    required: false
+    default: ghc-pkg
 
 runs:
   using: node20

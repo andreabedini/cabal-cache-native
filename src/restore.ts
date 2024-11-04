@@ -3,9 +3,10 @@ import * as core from "@actions/core";
 import * as io from "@actions/io";
 import * as cache from "@actions/cache";
 import { exec } from "./exec.js";
-import { cacheKeyGen } from "./cache-key.js";
+import { cacheKey } from "./cache-key.js";
 import { getPlan } from "./plan.js";
 import { getStoreDirectory } from "./store.js";
+import { findGhc } from "./ghc.js";
 
 export async function restore() {
   const plan = await getPlan();
@@ -15,22 +16,18 @@ export async function restore() {
 
   const cabalVersion = plan["cabal-version"];
 
-  // try to find the compiler
-  const ghcPath = (await io.which(compilerId, false)) || "ghc";
-  core.debug(`ghcPath: ${ghcPath}`);
-
-  const storeDirectory = await getStoreDirectory(ghcPath, cabalVersion);
+  const ghc = await findGhc(compilerId);
+  const storeDirectory = await getStoreDirectory(ghc, cabalVersion);
   core.saveState("storeDirectory", storeDirectory);
   core.debug(`storeDirectory: ${storeDirectory}`);
 
-  const extraCacheKey = core.getInput("extra-cache-key", { required: false });
+  const cacheKeyPrefix = core.getInput("cache-key-prefix");
 
   let numberOfRestoredUnits = 0;
+
   // We will make a list of units in the plan that are not found in the cache. These will
   // be the units to cache in the post action.
   const unitsToCache = new Set<string>();
-
-  const myCacheKey = cacheKeyGen(compilerId, extraCacheKey);
 
   core.startGroup("Restoring cache ...");
   for (const { id: unitId, style: unitStyle } of plan["install-plan"]) {
@@ -38,7 +35,7 @@ export async function restore() {
       continue;
     }
 
-    const key = myCacheKey(unitId);
+    const key = cacheKey(compilerId, cacheKeyPrefix, unitId);
     const paths = [
       path.join(storeDirectory, unitId),
       path.join(storeDirectory, "package.db", `${unitId}.conf`),
@@ -63,9 +60,10 @@ export async function restore() {
   core.saveState("unitsToCache", JSON.stringify(Array.from(unitsToCache)));
 
   const packageDbPath = path.join(storeDirectory, "package.db");
-  // Make sure the directory exists before running ghc-pkg
+
+  // Make sure the directory exists before running ghc-pkg, as we might have restored nothing.
   await io.mkdirP(packageDbPath);
-  await exec("ghc-pkg", ["recache", `--package-db=${packageDbPath}`]);
+  await exec(ghc.ghcPkgPath, ["recache", `--package-db=${packageDbPath}`]);
 }
 
 restore();

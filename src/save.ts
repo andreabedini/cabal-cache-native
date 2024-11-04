@@ -2,7 +2,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
-import { cacheKeyGen } from "./cache-key";
+import { cacheKey } from "./cache-key";
 
 async function save() {
   const storeDirectory = core.getState("storeDirectory");
@@ -11,8 +11,7 @@ async function save() {
   const compilerId = core.getState("compilerId");
   core.debug(`Saved compilerId: ${compilerId}`);
 
-  const extraCacheKey = core.getInput("extra-cache-key", { required: false });
-  const mkCacheKey = cacheKeyGen(compilerId, extraCacheKey);
+  const cacheKeyPrefix = core.getInput("cache-key-prefix");
 
   const unitsToCache = JSON.parse(core.getState("unitsToCache"));
   if (!(unitsToCache instanceof Array)) {
@@ -28,15 +27,20 @@ async function save() {
     let numberOfSavedUnits = 0;
     const unitsFailedToCache = new Set<string>();
     for await (const unitId of unitsToCache) {
-      const key = mkCacheKey(unitId);
+      const key = cacheKey(compilerId, cacheKeyPrefix, unitId);
       const paths = [
         path.join(storeDirectory, unitId),
         path.join(storeDirectory, "package.db", `${unitId}.conf`),
       ];
 
-      if (
-        !(await Promise.all(paths.map((p) => fs.stat(p))).catch((_) => false))
-      ) {
+      // skip caching paths that do not exists on disk, they must have failed to build.
+      let paths_exist = paths.map((p) =>
+        fs.stat(p).then(
+          (_) => true,
+          (_) => false,
+        ),
+      );
+      if (!(await Promise.all(paths_exist))) {
         continue;
       }
 
