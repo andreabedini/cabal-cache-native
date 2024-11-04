@@ -6,6 +6,7 @@ export interface Unit {
   id: string;
   style: string | undefined;
 }
+
 interface Plan {
   "compiler-id": string;
   "install-plan": Unit[];
@@ -24,8 +25,8 @@ async function readPlanJson(planPath: string): Promise<Plan> {
 }
 
 export async function getPlan(): Promise<Plan> {
-  const planJson = core.getInput("plan-json", { required: false });
-  const projectPath = core.getInput("project-path", { required: false });
+  const planJson = core.getInput("plan-json");
+  const projectPath = core.getInput("project-path");
 
   const resolvedPath = path.resolve(projectPath, planJson);
   core.info(`Reading the build plan from ${resolvedPath}`);

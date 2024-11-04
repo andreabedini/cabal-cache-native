@@ -1,11 +1,7 @@
-export function cacheKeyGen(
+export function cacheKey(
   compilerId: string,
-  extraCacheKey: string | undefined,
-) {
-  return (unitId: string) =>
-    [
-      "cabal",
-      extraCacheKey ? `-${extraCacheKey}` : "",
-      `-${compilerId}-${unitId}`,
-    ].join("");
+  cacheKeyPrefix: string,
+  unitId: string,
+): string {
+  return `${cacheKeyPrefix}-${compilerId}-${unitId}`;
 }

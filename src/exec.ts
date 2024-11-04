@@ -2,7 +2,10 @@ import { exec } from "@actions/exec";
 
 export { exec };
 
-export async function execWithOutput(command: string, args: string[]) {
+export async function execWithOutput(
+  command: string,
+  args: string[],
+): Promise<string> {
   let myOutput = "";
   await exec(command, args, {
     silent: true,

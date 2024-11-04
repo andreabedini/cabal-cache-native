@@ -51,7 +51,13 @@ jobs:
           # plan-json: dist-newstyle/cache/plan.json
 
           # optional, use this to separate caches or to start from scratch.
-          # cache-epoch: 0
+          # cache-key-prefix: cabal-
+
+          # optional, use this ghc to locate ghc-pkg
+          # ghc: ghc
+
+          # optional, use this ghc-pkg
+          # ghc-pkg: ghc-pkg
 
       # No need to check for cache hits, just build your project!
       - run: cabal build all
