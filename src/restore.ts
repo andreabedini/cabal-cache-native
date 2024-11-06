@@ -4,7 +4,7 @@ import * as io from "@actions/io";
 import * as cache from "@actions/cache";
 import { exec } from "./exec.js";
 import { cacheKey } from "./cache-key.js";
-import { getPlan } from "./plan.js";
+import { getPlan, Result, toAdjacencyList, traverse } from "./plan.js";
 import { getStoreDirectory } from "./store.js";
 import { findGhc } from "./ghc.js";
 
@@ -23,34 +23,44 @@ export async function restore() {
 
   let numberOfRestoredUnits = 0;
 
-  // We will make a list of units in the plan that are not found in the cache. These will
-  // be the units to cache in the post action.
-  const unitsToCache = new Set<string>();
-
   core.startGroup("Restoring cache ...");
-  for (const { id: unitId, style: unitStyle } of plan["install-plan"]) {
-    if (unitStyle != "global") {
-      continue;
-    }
 
-    const key = cacheKey(compilerId, unitId);
-    const paths = [
-      path.join(storeDirectory, unitId),
-      path.join(storeDirectory, "package.db", `${unitId}.conf`),
-    ];
+  const adjList = toAdjacencyList(
+    plan["install-plan"].filter((v) => v.style == "global"),
+  );
 
-    core.debug(`Restoring paths ${paths} with key: ${key}`);
-    const restoredKey = await cache.restoreCache(paths, key);
+  const { completed, skipped, failed } = await traverse(
+    adjList,
+    async (unitId) => {
+      const key = cacheKey(compilerId, unitId);
+      const paths = [
+        path.join(storeDirectory, unitId),
+        path.join(storeDirectory, "package.db", `${unitId}.conf`),
+      ];
 
-    if (restoredKey) {
-      core.info(`Unit ${unitId} restored from cache`);
-      numberOfRestoredUnits++;
-    } else {
-      core.info(`Unit ${unitId} was not found in cache`);
-      unitsToCache.add(unitId);
-    }
-  }
+      core.debug(`Restoring paths ${paths} with key: ${key}`);
+      try {
+        const restoredKey = await cache.restoreCache(paths, key);
+        if (!restoredKey) {
+          core.info(`Unit ${unitId} was not found in cache`);
+          // unitsToCache.add(unitId);
+          return false;
+        }
+        core.info(`Unit ${unitId} restored from cache`);
+        //  numberOfRestoredUnits++;
+      } catch (e) {
+        core.error(e);
+        return false;
+      }
+    },
+  );
   core.endGroup();
+
+  core.info(`Completed: ${completed}`);
+  core.info(`Skipped: ${skipped}`);
+  core.info(`Failed: ${failed}`);
+
+  const unitsToCache = new Set<string>([...skipped, ...failed]);
 
   // Only enumerable own properties are visited. This means Map, Set, etc. will become "{}".
   core.saveState("unitsToCache", JSON.stringify(Array.from(unitsToCache)));
@@ -60,7 +70,7 @@ export async function restore() {
     `${unitsToCache.size} units are marked to be saved at the end of the workflow.`,
   );
 
-  if (numberOfRestoredUnits > 0) {
+  if (completed.size > 0) {
     const packageDbPath = path.join(storeDirectory, "package.db");
     // Make sure the directory exists before running ghc-pkg, as we might have restored nothing.
     await io.mkdirP(packageDbPath);

@@ -2,17 +2,69 @@ import * as core from "@actions/core";
 import * as fs from "fs/promises";
 import * as path from "path";
 
-export interface Unit {
+export type Unit = {
   id: string;
-  style: string | undefined;
-}
+  style: "local" | "global";
+  depends: string[];
+};
 
-interface Plan {
+export type Plan = {
   "compiler-id": string;
   "install-plan": Unit[];
+};
+
+export type AdjacencyList = { [key: string]: string[] };
+
+export function toAdjacencyList(units: Unit[]): AdjacencyList {
+  const graph: AdjacencyList = {};
+  for (const unit of units) {
+    graph[unit.id] = unit.depends;
+  }
+  return graph;
 }
 
-async function readPlanJson(planPath: string): Promise<Plan> {
+export type K = (key: string) => Promise<boolean>;
+
+export type Result = Promise<{
+  completed: Set<string>;
+  failed: Set<string>;
+  skipped: Set<string>;
+}>;
+
+export async function traverse(graph: AdjacencyList, k: K): Result {
+  const completed: Set<string> = new Set();
+  const visited: Set<string> = new Set();
+  const failed: Set<string> = new Set();
+  const skipped: Set<string> = new Set();
+
+  async function visit(node: string): Promise<void> {
+    if (visited.has(node)) {
+      return;
+    }
+    visited.add(node);
+    for (const neighbor of graph[node] || []) {
+      await visit(neighbor);
+      if (failed.has(neighbor) || skipped.has(neighbor)) {
+        skipped.add(node);
+        return;
+      }
+    }
+
+    if (await k(node)) {
+      completed.add(node);
+    } else {
+      failed.add(node);
+    }
+  }
+
+  for (const node in graph) {
+    await visit(node);
+  }
+
+  return { completed, failed, skipped };
+}
+
+export async function readPlanJson(planPath: string): Promise<Plan> {
   try {
     const file = await fs.readFile(planPath);
     return JSON.parse(file.toString());
