@@ -38,15 +38,16 @@ export async function traverse(graph: AdjacencyList, k: K): Result {
   const skipped: Set<string> = new Set();
 
   async function visit(node: string): Promise<void> {
-    if (visited.has(node)) {
-      return;
-    }
     visited.add(node);
     for (const neighbor of graph[node] || []) {
-      await visit(neighbor);
+      // If neighbor was skipped or had failed we bail processing node
+      // and mark it as skipped too.
       if (failed.has(neighbor) || skipped.has(neighbor)) {
         skipped.add(node);
         return;
+      }
+      if (!visited.has(neighbor)) {
+        await visit(neighbor);
       }
     }
 
