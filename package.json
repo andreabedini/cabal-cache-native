@@ -19,8 +19,7 @@
   "scripts": {
     "build": "esbuild src/restore.ts src/save.ts --bundle --target=node20 --platform=node --format=cjs --minify --outdir=dist",
     "format": "prettier --write src *.yml *.json *.md",
-    "format-check": "prettier --check src *.yml *.md",
-    "start": "npm run build && node dist/setup/index.js"
+    "format-check": "prettier --check src *.yml *.md"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
