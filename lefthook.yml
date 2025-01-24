@@ -1,10 +1,10 @@
 pre-commit:
   commands:
     format:
-      glob: "*.{js,ts}"
+      glob: "*.ts"
       run: npm run format
+      stage_fixed: true
     build:
-      globl: "*.{js,ts}"
-      run: npm run build
-    compare:
-      run: git diff --ignore-space-at-eol --exit-code --name-status ./dist
+      glob: "*.ts"
+      run: |
+        npm run build && git add dist
