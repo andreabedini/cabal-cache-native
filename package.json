@@ -22,16 +22,16 @@
     "format-check": "prettier --check src *.yml *.md"
   },
   "devDependencies": {
-    "@eslint/js": "^9.13.0",
+    "@eslint/js": "^9.19.0",
     "@types/eslint__js": "^8.42.3",
-    "@types/node": "^22.7.7",
-    "@vtsls/language-server": "^0.2.6",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.13.0",
-    "eslint-plugin-n": "^17.11.1",
-    "prettier": "^3.3.3",
+    "@types/node": "^22.10.10",
+    "@vtsls/language-server": "^0.2.8",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.19.0",
+    "eslint-plugin-n": "^17.15.1",
+    "prettier": "^3.4.2",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.11.0"
+    "typescript-eslint": "^8.21.0"
   },
   "dependencies": {
     "@actions/cache": "^4.0.0",
