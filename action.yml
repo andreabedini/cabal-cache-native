@@ -10,20 +10,28 @@ inputs:
     required: false
     default: dist-newstyle/cache/plan.json
   store-path:
-    description: Path to the cabal store
-    required: true
+    description: Path to the cabal store. By default it is the one cabal uses, as reported by `cabal path`. If set, it is passed to cabal as `--store-dir` and has to match the store your build uses.
+    required: false
   cache-key-prefix:
     description: Extra string to prepended to the cache keys. It can be used to isolate different caches or start from scratch.
     required: false
     default: cabal
+  cabal:
+    description: Path to cabal (cabal-install 3.12 or later)
+    required: false
+    default: cabal
   ghc:
-    description: Path to ghc
+    description: Path to ghc, passed to cabal as `--with-compiler`. By default it is the one the project uses.
     required: false
-    default: ghc
-  ghcPkg:
-    description: Path to ghc-pkg
+  ghc-pkg:
+    description: Path to ghc-pkg. By default it is found next to ghc.
     required: false
-    default: ghc-pkg
+
+outputs:
+  restored:
+    description: Number of units restored from the cache
+  missed:
+    description: Number of units not restored from the cache, which will be saved at the end of the job
 
 runs:
   using: node20

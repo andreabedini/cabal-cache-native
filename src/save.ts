@@ -1,76 +1,89 @@
 import * as fs from "fs/promises";
-import * as path from "path";
 import * as core from "@actions/core";
 import * as cache from "@actions/cache";
-import { cacheKey } from "./cache-key";
+import { cacheKey, unitPaths } from "./cache-key.js";
+
+async function exists(p: string): Promise<boolean> {
+  return fs.stat(p).then(
+    () => true,
+    () => false,
+  );
+}
 
 async function save() {
+  const unitsToCacheState = core.getState("unitsToCache");
+  if (!unitsToCacheState) {
+    core.info("The restore step did not complete, nothing to save");
+    return;
+  }
+
   const storeDirectory = core.getState("storeDirectory");
   core.debug(`Saved storeDirectory: ${storeDirectory}`);
 
   const compilerId = core.getState("compilerId");
   core.debug(`Saved compilerId: ${compilerId}`);
 
-  const unitsToCache = JSON.parse(core.getState("unitsToCache"));
+  const unitsToCache = JSON.parse(unitsToCacheState);
   if (!(unitsToCache instanceof Array)) {
     throw Error(`unitsToCache is not an array: ${unitsToCache}`);
   }
 
   if (unitsToCache.length === 0) {
     core.info("No units to cache, stopping here");
-  } else {
-    core.info(`${unitsToCache.length} units have been marked to save.`);
-    core.debug(`Units to cache: ${unitsToCache.join(", ")}`);
+    return;
+  }
 
-    core.startGroup("Saving ...");
-    let numberOfSavedUnits = 0;
-    const unitsFailedToCache = new Set<string>();
-    for await (const unitId of unitsToCache) {
-      const key = cacheKey(compilerId, unitId);
+  core.info(`${unitsToCache.length} units have been marked to save.`);
+  core.debug(`Units to cache: ${unitsToCache.join(", ")}`);
 
-      const paths = [
-        path.join(storeDirectory, unitId),
-        path.join(storeDirectory, "package.db", `${unitId}.conf`),
-      ];
+  core.startGroup("Saving ...");
+  let numberOfSavedUnits = 0;
+  const unitsNotBuilt = new Set<string>();
+  const unitsFailedToCache = new Set<string>();
+  for (const unitId of unitsToCache) {
+    const key = cacheKey(compilerId, unitId);
+    const paths = unitPaths(storeDirectory, unitId);
 
-      core.info(`Unit ${unitId} (key: ${key})`);
-      let allok = true;
-      for (const p of paths) {
-        const exists = await fs.stat(p).then(
-          (_) => true,
-          (_) => false,
-        );
-        core.info(`- ${p} ${exists ? "exists" : "does not exist"}`);
-        allok = allok && exists;
-      }
-      if (!allok) {
-        core.info("Some paths do not exist, skipping");
-        continue;
-      }
+    // The package.db entry is missing for units without a library, so only
+    // the unit directory is required.
+    if (!(await exists(paths[0]))) {
+      core.info(`Unit ${unitId} is not in the store, skipping`);
+      unitsNotBuilt.add(unitId);
+      continue;
+    }
 
-      try {
-        await cache.saveCache(paths, key);
-      } catch (e) {
-        core.warning(`Error saving ${unitId}: ${e}`);
+    try {
+      // saveCache logs the reason and returns -1 if it fails.
+      if ((await cache.saveCache(paths, key)) === -1) {
         unitsFailedToCache.add(unitId);
         continue;
       }
-      core.info(`Unit ${unitId} stored in cache`);
-      numberOfSavedUnits++;
+    } catch (e) {
+      core.warning(`Error saving ${unitId}: ${e}`);
+      unitsFailedToCache.add(unitId);
+      continue;
     }
-    core.endGroup();
+    core.info(`Unit ${unitId} stored in cache (key: ${key})`);
+    numberOfSavedUnits++;
+  }
+  core.endGroup();
 
-    if (numberOfSavedUnits > 0) {
-      core.info(`Cached ${numberOfSavedUnits} new units`);
-    } else {
-      core.info("No new units were cached.");
-    }
-    if (unitsFailedToCache.size > 0) {
-      core.warning(
-        `Failed to cache ${unitsFailedToCache.size} units: ${Array.from(unitsFailedToCache).join(", ")}`,
-      );
-    }
+  if (numberOfSavedUnits > 0) {
+    core.info(`Cached ${numberOfSavedUnits} new units`);
+  } else {
+    core.info("No new units were cached.");
+  }
+  if (unitsNotBuilt.size > 0) {
+    core.info(
+      `${unitsNotBuilt.size} units were not built, perhaps the build plan differs from the build`,
+    );
+  }
+  if (unitsFailedToCache.size > 0) {
+    core.warning(
+      `Failed to cache ${unitsFailedToCache.size} units: ${Array.from(unitsFailedToCache).join(", ")}`,
+    );
   }
 }
 
-save();
+// Failing to save the cache should not fail the job.
+save().catch((e) => core.warning((e as Error).message));

@@ -15,6 +15,10 @@ on:
         type: string
       cache-key-prefix:
         type: string
+      expect-restored:
+        description: Whether every unit should be restored from the cache
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,10 +66,24 @@ jobs:
         working-directory: test-project
 
       - uses: ./cabal-cache-native
+        id: cache
         with:
-          store-path: ${{ steps.setup.outputs.cabal-store }}
           project-path: test-project
           cache-key-prefix: ${{ inputs.cache-key-prefix }}
+
+      - name: Check that every unit was restored
+        if: inputs.expect-restored
+        shell: bash
+        working-directory: test-project
+        run: |
+          echo "restored: ${{ steps.cache.outputs.restored }}, missed: ${{ steps.cache.outputs.missed }}"
+          test "${{ steps.cache.outputs.restored }}" -gt 0
+          test "${{ steps.cache.outputs.missed }}" -eq 0
+          cabal build ${{ inputs.package-id }} --dry-run | tee dry-run.log
+          if grep -q "requires build" dry-run.log; then
+            echo "::error::cabal still has units to build after restoring the cache"
+            exit 1
+          fi
 
       - run: cabal build ${{ inputs.package-id }}
         working-directory: test-project

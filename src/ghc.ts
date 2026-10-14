@@ -1,34 +1,24 @@
-import * as core from "@actions/core";
-import * as io from "@actions/io";
+import * as path from "path";
 import { execWithOutput } from "./exec.js";
 
-export interface GhcInfo {
-  ghcPath: string;
-  ghcPkgPath: string;
-  info: { [key: string]: string };
-}
-
-async function getGhcInfo(ghcPath: string) {
-  const myOutput = await execWithOutput(ghcPath, ["--info"]);
+export async function getGhcInfo(
+  ghcPath: string,
+): Promise<{ [key: string]: string }> {
+  const output = await execWithOutput(ghcPath, ["--info"]);
   const re = /\("([^"]*)","([^"]*)"\)/g;
-  const info = {};
+  const info: { [key: string]: string } = {};
   let result: RegExpExecArray | null;
-  while ((result = re.exec(myOutput))) {
-    const key = result[1];
-    const value = result[2];
-    info[key] = value;
+  while ((result = re.exec(output))) {
+    info[result[1]] = result[2];
   }
   return info;
 }
 
-export async function findGhc(compilerId: string): Promise<GhcInfo> {
-  const ghcPath: string =
-    core.getInput("ghc") || (await io.which(compilerId, false)) || "ghc";
-
-  const ghcPkgPath =
-    core.getInput("ghc-pkg") || ghcPath.replace("ghc", "ghc-pkg");
-
-  const info = await getGhcInfo(ghcPath);
-
-  return { ghcPath, ghcPkgPath, info };
+// Guesses ghc-pkg's path from ghc's, e.g. /usr/bin/ghc-9.8.4 becomes
+// /usr/bin/ghc-pkg-9.8.4. Only the file name is changed, so directories
+// such as ~/.ghcup are left alone.
+export function ghcPkgPath(ghcPath: string): string {
+  const dir = path.dirname(ghcPath);
+  const file = path.basename(ghcPath).replace(/^ghc/, "ghc-pkg");
+  return path.join(dir, file);
 }
