@@ -4,7 +4,3 @@ pre-commit:
       glob: "*.ts"
       run: npm run format
       stage_fixed: true
-    build:
-      glob: "*.ts"
-      run: |
-        npm run build && git add dist

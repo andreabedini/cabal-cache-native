@@ -41,7 +41,7 @@ jobs:
       # This step is required to generate the build plan
       - run: cabal build all --dry-run
 
-      - uses: andreabedini/cabal-cache-native
+      - uses: andreabedini/cabal-cache-native@v1
         with:
           # optional, the path to the project
           # project-path: .
@@ -73,6 +73,9 @@ jobs:
 The action sets two outputs: `restored`, the number of units restored from
 the cache, and `missed`, the number of units that were not, which are saved at
 the end of the job once cabal has built them.
+
+Use a release tag, such as `@v1` or `@v1.2.3`. The `main` branch only holds
+the source; the built action exists only on release tags.
 
 NOTE: `cabal build` has to be the same command you use to build (plus
 `--dry-run`) otherwise you risk caching the wrong dependencies. This should not

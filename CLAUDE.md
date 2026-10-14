@@ -18,19 +18,18 @@ npm run format            # prettier --write
 npm run format-check      # what CI runs
 ```
 
-- `dist/` is committed and is the code the action runs. CI rebuilds it and
-  fails if `git diff ./dist` is not empty, so rebuild and commit `dist/` with
-  every change to `src/`.
+- `dist/` is the code the action runs, but it is ignored and never committed
+  to `main`. It only exists on release commits (see Releases). CI and the
+  integration tests build it before using the action.
 - `rolldown.config.ts` builds each entry point into one self-contained ESM
-  file: rolldown bundles every dependency by default, and `codeSplitting:
-false` prevents shared chunks. `package.json` has `"type": "module"`, which
-  is what makes Node load `dist/*.js` as ESM.
+  file: rolldown bundles every dependency by default, and
+  `codeSplitting: false` prevents shared chunks. `package.json` has
+  `"type": "module"`, which is what makes Node load `dist/*.js` as ESM.
 - rolldown does no type checking; run `npx tsc --noEmit` (`tsconfig.json` is
   check-only). There is no typecheck or lint script, and no ESLint config,
   even though `eslint` is in devDependencies.
-- The `lefthook.yml` pre-commit hook (format, build, `git add dist`) is a git
-  hook. It does not run on `jj commit`, so run `npm run format` and
-  `npm run build` by hand first.
+- The `lefthook.yml` pre-commit hook only runs prettier, and only for git. It
+  does not run on `jj commit`, so run `npm run format` by hand.
 
 ## Tests
 
@@ -46,7 +45,7 @@ run on GitHub (`ci.yml` → `tests.yml` → `test-workflow.yml` → `test-build.
   to build.
 - `test-build.yml` creates a throwaway project that builds one Hackage package
   (`lens`) at a pinned `index-state`. It runs on ubuntu, macOS and Windows and
-  uses the action via `uses: ./cabal-cache-native`. The job has
+  builds the action and uses it via `uses: ./cabal-cache-native`. The job has
   `continue-on-error: true`, so failures don't fail the workflow.
 
 ## Architecture
@@ -59,9 +58,10 @@ The two entry points are separate processes. They share data only through
 
 1. `plan.ts`: read `plan.json` from `project-path`/`plan-json`. The user must
    run `cabal build --dry-run` first.
-2. `cabal.ts`: run `cabal path --output-format=json --compiler-info
---store-dir` in the project directory, so that it picks up the same
-   project config as the build. The `store-path` and `ghc` inputs become
+2. `cabal.ts`: run
+   `cabal path --output-format=json --compiler-info --store-dir` in the
+   project directory, so that it picks up the same project config as the
+   build. The `store-path` and `ghc` inputs become
    `--store-dir` and `--with-compiler`. Fail if its compiler id differs from
    the plan's `compiler-id`. This needs cabal-install 3.12 or later.
 3. `store.ts`: cabal ≥ 3.16 reports `compiler.store-path` directly. For 3.12
@@ -93,6 +93,12 @@ failures. `restoreCache` returns `undefined` on a miss.
 
 ## Releases
 
-release-please (`release-please-config.json`, node release type, prerelease)
-creates releases from Conventional Commit messages. `build.yml` is a manual
-(`workflow_dispatch`) workflow that rebuilds `dist/` and pushes the result.
+Releases are cut by hand with the `Release` workflow (`release.yml`,
+`workflow_dispatch` on `main`, input `version` such as `1.2.3`). It builds
+`dist/`, commits it on a commit that is not on `main`, tags that commit
+`vX.Y.Z`, force-moves the major tag `vX` to it, and creates the GitHub release
+with generated notes. Users reference `@vX` or `@vX.Y.Z`; `@main` and commit
+SHAs on `main` don't work, because `main` has no `dist/`.
+
+There is no release-please: it uses the commit of the latest release tag as its
+changelog boundary, so it can't work with release tags that are not on `main`.

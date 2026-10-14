@@ -37,20 +37,11 @@ jobs:
       - name: Run prettier
         run: npm run format-check
 
+      - name: Type check
+        run: npx tsc --noEmit
+
       - name: Build
         run: npm run build
-
-      - name: Compare the expected and actual dist directories
-        run: git diff --ignore-space-at-eol --exit-code --name-status ./dist
-        id: diff
-
-      # If inners of the dist directory were different than expected, upload the expected version as an artifact
-      - name: Upload artifact
-        if: ${{failure() && steps.diff.conclusion == 'failure'}}
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: ./dist
 
       - name: Audit packages
         run: npm audit --audit-level=high
