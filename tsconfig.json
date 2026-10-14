@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "lib": ["ES2020"],
-    "module": "ES2020",
-    "target": "ES2020",
-    "moduleResolution": "node",
+    "lib": ["ES2024"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "target": "ES2024",
+    "noEmit": true,
     "skipLibCheck": true,
     "types": ["node"]
   }

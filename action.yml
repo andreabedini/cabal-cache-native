@@ -34,6 +34,6 @@ outputs:
     description: Number of units not restored from the cache, which will be saved at the end of the job
 
 runs:
-  using: node20
+  using: node24
   main: ./dist/restore.js
   post: ./dist/save.js

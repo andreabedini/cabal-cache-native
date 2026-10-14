@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A JavaScript GitHub Action (TypeScript source, `node20` runtime) that caches a
+A JavaScript GitHub Action (TypeScript source, ESM, `node24` runtime) that caches a
 cabal store with per-unit granularity: every global unit in cabal's `plan.json`
 gets its own entry in the GitHub Actions cache. `action.yml` runs
 `dist/restore.js` as the main step and `dist/save.js` as the post step.
@@ -13,7 +13,7 @@ gets its own entry in the GitHub Actions cache. `action.yml` runs
 
 ```sh
 npm ci --ignore-scripts   # install (as CI does)
-npm run build             # esbuild bundles src/restore.ts and src/save.ts into dist/
+npm run build             # rolldown bundles src/restore.ts and src/save.ts into dist/
 npm run format            # prettier --write
 npm run format-check      # what CI runs
 ```
@@ -21,8 +21,13 @@ npm run format-check      # what CI runs
 - `dist/` is committed and is the code the action runs. CI rebuilds it and
   fails if `git diff ./dist` is not empty, so rebuild and commit `dist/` with
   every change to `src/`.
-- esbuild does no type checking. There is no typecheck or lint script, and no
-  ESLint config, even though `typescript` and `eslint` are in devDependencies.
+- `rolldown.config.ts` builds each entry point into one self-contained ESM
+  file: rolldown bundles every dependency by default, and `codeSplitting:
+false` prevents shared chunks. `package.json` has `"type": "module"`, which
+  is what makes Node load `dist/*.js` as ESM.
+- rolldown does no type checking; run `npx tsc --noEmit` (`tsconfig.json` is
+  check-only). There is no typecheck or lint script, and no ESLint config,
+  even though `eslint` is in devDependencies.
 - The `lefthook.yml` pre-commit hook (format, build, `git add dist`) is a git
   hook. It does not run on `jj commit`, so run `npm run format` and
   `npm run build` by hand first.
