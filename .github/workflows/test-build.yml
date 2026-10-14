@@ -36,12 +36,12 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: cabal-cache-native
 
       # dist/ is not committed, so build the action before using it.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24.x"
           cache: npm
@@ -59,14 +59,6 @@ jobs:
           ghc-version: ${{ inputs.ghc-version }}
           cabal-version: ${{ inputs.cabal-version }}
           cabal-update: false
-
-      - uses: actions/cache@v4
-        with:
-          # NOTE: I wish haskell-actions/setup would tell us this location
-          # (perhaps even better if cabal itself would tell us)
-          path: ${{ steps.setup.outputs.cabal-store }}/../packages/hackage.haskell.org/01-index.*
-          key: cache-test-hackage-index
-          save-always: true
 
       - run: |
           mkdir test-project
