@@ -25,7 +25,7 @@ jobs:
       cabal-version: ${{ inputs.cabal-version }}
       package-id: ${{ inputs.package-id }}
       index-state: ${{ inputs.index-state }}
-      cache-key-prefix: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      cache-key-prefix: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}-${{ inputs.cabal-version }}
 
   step-two:
     needs: step-one
@@ -35,4 +35,5 @@ jobs:
       cabal-version: ${{ inputs.cabal-version }}
       package-id: ${{ inputs.package-id }}
       index-state: ${{ inputs.index-state }}
-      cache-key-prefix: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}
+      cache-key-prefix: test-${{ github.run_id }}-${{ github.run_attempt || 0 }}-${{ inputs.cabal-version }}
+      expect-restored: true

@@ -25,7 +25,9 @@ The complexity of the example workflow from [haskell-actions/setup](https://gith
 
 ## Usage
 
-To use this action you need to get cabal to create a build plan (i.e. the `plan.json` file). This is typically achieved by passing the `--dry-run` flag to the build command. Once `plan.json` has been created, `cabal-cache-native` will read from it the ids of the units to restore from cache. The action will look for `plan.json` in `${project-path}/${plan-json}`.
+To use this action you need cabal-install 3.12 or later, and you need cabal to create a build plan (i.e. the `plan.json` file). This is typically achieved by passing the `--dry-run` flag to the build command. Once `plan.json` has been created, `cabal-cache-native` will read from it the ids of the units to restore from cache. The action will look for `plan.json` in `${project-path}/${plan-json}`.
+
+The action asks cabal where the store is with `cabal path`, run in `${project-path}`, so it finds the same store and compiler as your build.
 
 ```yaml
 jobs:
@@ -41,9 +43,6 @@ jobs:
 
       - uses: andreabedini/cabal-cache-native
         with:
-          # required
-          store-path: ${{ steps.setup.outputs.cabal-store }}
-
           # optional, the path to the project
           # project-path: .
 
@@ -53,15 +52,27 @@ jobs:
           # optional, use this to separate caches or to start from scratch.
           # cache-key-prefix: cabal
 
-          # optional, use this ghc to locate ghc-pkg
+          # optional, by default the store reported by `cabal path`.
+          # It is passed to cabal as --store-dir.
+          # store-path: ${{ steps.setup.outputs.cabal-store }}
+
+          # optional, use this cabal
+          # cabal: cabal
+
+          # optional, passed to cabal as --with-compiler. Use the same
+          # compiler you build with.
           # ghc: ghc
 
-          # optional, use this ghc-pkg
+          # optional, use this ghc-pkg (by default, the one next to ghc)
           # ghc-pkg: ghc-pkg
 
       # No need to check for cache hits, just build your project!
       - run: cabal build all
 ```
+
+The action sets two outputs: `restored`, the number of units restored from
+the cache, and `missed`, the number of units that were not, which are saved at
+the end of the job once cabal has built them.
 
 NOTE: `cabal build` has to be the same command you use to build (plus
 `--dry-run`) otherwise you risk caching the wrong dependencies. This should not

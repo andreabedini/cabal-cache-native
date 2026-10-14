@@ -1,22 +1,23 @@
 import * as path from "path";
-import * as core from "@actions/core";
-import { GhcInfo } from "./ghc.js";
+import { CabalPath } from "./cabal.js";
+import { getGhcInfo } from "./ghc.js";
 
-function versionAtLeast(ver1: string, ver2: string): boolean {
-  return ver1.localeCompare(ver2, undefined, { numeric: true }) >= 0;
-}
+// Returns the store directory for the project's compiler. Cabal-install calls
+// `store-dir` the "store root", which contains one store directory per
+// compiler.
+export async function getStoreDirectory(cabal: CabalPath): Promise<string> {
+  // cabal-install 3.16 and later tell us directly.
+  const storePath = cabal.compiler["store-path"];
+  if (storePath) {
+    return storePath;
+  }
 
-export async function getStoreDirectory(ghc: GhcInfo, cabalVersion: string) {
-  // NOTE: Cabal-install calls this "store root", which contains a separate store directory for each compiler.
-  const storeRoot = core.getInput("store-path", { required: true });
-
-  // Slight approximations but they only have to work on a finite number of cases.
-  const compilerId = `ghc-${ghc.info["Project version"]}`;
-  const compilerAbiTag = ghc.info["Project Unit Id"];
-
-  const storeDirectory = versionAtLeast(cabalVersion, "3.12")
-    ? path.join(storeRoot, compilerAbiTag || compilerId)
-    : path.join(storeRoot, compilerId);
-
-  return storeDirectory;
+  // cabal-install 3.12 and 3.14 do not, but they name the directory after the
+  // compiler ABI tag: GHC's "Project Unit Id" (GHC 9.8 and later) or, when
+  // that is missing, the compiler id.
+  const info = await getGhcInfo(cabal.compiler.path);
+  return path.join(
+    cabal["store-dir"],
+    info["Project Unit Id"] || cabal.compiler.id,
+  );
 }
