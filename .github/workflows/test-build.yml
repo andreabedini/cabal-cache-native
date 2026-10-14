@@ -40,6 +40,19 @@ jobs:
         with:
           path: cabal-cache-native
 
+      # dist/ is not committed, so build the action before using it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: npm
+          cache-dependency-path: cabal-cache-native/package-lock.json
+
+      - name: Build the action
+        working-directory: cabal-cache-native
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+
       - uses: haskell-actions/setup@v2
         id: setup
         with:
