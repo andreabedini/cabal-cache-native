@@ -26,8 +26,7 @@ npm run format-check      # what CI runs
   `codeSplitting: false` prevents shared chunks. `package.json` has
   `"type": "module"`, which is what makes Node load `dist/*.js` as ESM.
 - rolldown does no type checking; run `npx tsc --noEmit` (`tsconfig.json` is
-  check-only). There is no typecheck or lint script, and no ESLint config,
-  even though `eslint` is in devDependencies.
+  check-only). There is no typecheck script and no linter.
 - The `lefthook.yml` pre-commit hook only runs prettier, and only for git. It
   does not run on `jj commit`, so run `npm run format` by hand.
 
