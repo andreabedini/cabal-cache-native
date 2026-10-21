@@ -60,6 +60,17 @@ jobs:
           cabal-version: ${{ inputs.cabal-version }}
           cabal-update: false
 
+      # GHC links against the Command Line Tools SDK even when SDKROOT points
+      # elsewhere. When the image ships Command Line Tools newer than its
+      # default Xcode, Xcode's linker cannot read that SDK ("tapi error:
+      # malformed file"), so use the Command Line Tools toolchain as well.
+      - name: Use the Command Line Tools toolchain
+        if: runner.os == 'macOS'
+        run: |
+          echo "DEVELOPER_DIR=/Library/Developer/CommandLineTools" | tee -a "$GITHUB_ENV"
+          DEVELOPER_DIR=/Library/Developer/CommandLineTools xcrun ld -v
+          ghc-pkg field rts,base library-dirs,extra-lib-dirs || true
+
       - run: |
           mkdir test-project
           echo "index-state: ${{ inputs.index-state }}" >> test-project/cabal.project
